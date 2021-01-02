@@ -1,0 +1,12 @@
+requirements
+redis server
+
+tools
+qrz (lookup -> trigger qso, qsl, rotate, email)
+qsl (ends a QSO)
+qrv (prints current frequency/band/antenne etc..)
+qrx (disconnect all antennas)
+qth (print / set QTH)
+hamtools-import-adi (imports ADI to logs/lookup)
+qso (edits logs)
+qrz-label (dumps to specific label format)-
