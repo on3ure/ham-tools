@@ -26,16 +26,19 @@ style = Style.from_dict({
     'message': '#884444',
     'prompt': 'fg:#aa0022 bold'
 })
-'''Redis'''
+
+configdir = os.path.expanduser('~/.config/ham-tools')
+
+with open(configdir + '/config.yaml') as f:
+    cfg = yaml.load(f, Loader=yaml.FullLoader)
+
 redis = redis.Redis(host='localhost',
-                    port=6380,
+                    port=cfg['redis']['port'],
                     db=0,
                     charset="utf-8",
                     decode_responses=True)
-'''Preload Calls'''
+
 calls = list(redis.smembers('qrzCALLS'))
-'''Config dir'''
-configdir = os.path.expanduser('~/.config/ham-tools')
 
 
 def shutdown(forced=False):
@@ -64,9 +67,14 @@ def qrzLookup(origcall, config):
                              pwd=config['qrz.com']['password'])
     cic = Callinfo(my_lookuplib)
     origcall = origcall.upper()
-    call = cic.get_homecall(origcall)
-    lookup = qrzRedisLookup(call)
-    #if lookup is False:
+    try:
+        call = cic.get_homecall(origcall)
+        lookup = qrzRedisLookup(call)
+    except ValueError:
+        callsign = None
+        lookup = dict()
+        print("Not Found")
+        return {'origcallsign': origcall, 'callsign': callsign}
     if lookup is False:
         try:
             lookup = cic.get_all(call)
@@ -79,12 +87,12 @@ def qrzLookup(origcall, config):
             callsign = None
             lookup = dict()
             print("Not Found")
-            return origcall, callsign
+            return {'origcallsign': origcall, 'callsign': callsign}
         except KeyError:
             callsign = call
             lookup = dict()
             print("Not Found")
-            return origcall, callsign
+            return {'origcallsign': origcall, 'callsign': callsign}
     else:
         callsign = lookup['callsign']
     try:
@@ -95,6 +103,7 @@ def qrzLookup(origcall, config):
         print(fg('#f9b9b3') + callsign)
     except KeyError:
         print(fg('#f9b9b3') + callsign)
+    print()
     try:
         print(fg('#a4a24f') + lookup['fname'] + ' ' + lookup['name'])
     except KeyError:
@@ -121,9 +130,7 @@ def qrzLookup(origcall, config):
     except KeyError:
         email = None
 
-    data = {'origcallsign': origcall, 'callsign': callsign, 'email': email}
-
-    return data
+    return {'origcallsign': origcall, 'callsign': callsign, 'email': email}
 
 
 def ignore(config, data):
@@ -134,17 +141,20 @@ def ignore(config, data):
 
 def qso(config, data):
     '''log qso'''
-    os.system(config['qso']['exec'] + data['origcallsign'] + '" "' + data['callsign'] + '"')
+    os.system(config['qso']['exec'] + data['origcallsign'] + '" "' +
+              data['callsign'] + '"')
 
 
 def qsl(config, data):
     '''qsl'''
-    os.system(config['qsl']['exec'] + data['origcallsign'] + '" "' + data['callsign'] + '"')
+    os.system(config['qsl']['exec'] + data['origcallsign'] + '" "' +
+              data['callsign'] + '"')
 
 
 def rotate(config, data):
     '''rotate'''
-    os.system(config['rotate']['exec'] + data['origcallsign'] + '" "' + data['callsign'] + '"')
+    os.system(config['rotate']['exec'] + data['origcallsign'] + '" "' +
+              data['callsign'] + '"')
 
 
 def sendemail(config, data):
@@ -155,7 +165,8 @@ def sendemail(config, data):
 def appshutdown(config, data):
     '''bye bye'''
     if config['verbose'] is True:
-        print("ignoring selection " + data['origcallsign'] + " shutdown requested...exiting")
+        print("ignoring selection " + data['origcallsign'] +
+              " shutdown requested...exiting")
     shutdown()
 
 
@@ -176,9 +187,6 @@ options = {
 
 def main():
     '''Main stuff'''
-
-    with open(configdir + '/config.yaml') as f:
-        config = yaml.load(f, Loader=yaml.FullLoader)
 
     historyfile = configdir + "/qrz-history"
 
@@ -207,7 +215,7 @@ def main():
             if callLookup.lower() in ['exit', 'quit']:
                 shutdown()
             else:
-                data = qrzLookup(callLookup, config)
+                data = qrzLookup(callLookup, cfg)
                 if data['callsign'] is not None:
                     print(attr('reset'))
                     terminal_menu = TerminalMenu(menu_options,
@@ -215,7 +223,7 @@ def main():
                                                  " (" + data['origcallsign'] +
                                                  ")")
                     menu_entry_index = terminal_menu.show()
-                    options[menu_entry_index](config, data)
+                    options[menu_entry_index](cfg, data)
             if not infinite:
                 sys.exit()
 

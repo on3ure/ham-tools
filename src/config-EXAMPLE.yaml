@@ -1,0 +1,28 @@
+verbose: True
+redis:
+  port: 6379
+qth: 
+  heure:
+    call: "YOURCALL/A"
+    latitude:
+    longitude:
+    maidenhaid: 
+  merchtem:
+    call: "YOURCALL"
+    latitude:
+    longitude:
+    maidenhaid: 
+  lombardsijde:
+    call: "YOURCALL/A"
+    latitude:
+    longitude:
+    maidenhaid: 
+qrz.com:
+  username: "YOURCALL"
+  password: "YOURPASSWORD"
+email:
+  exec: "pb mailto:"
+qso:
+  exec: "qso "
+qsl:
+  exec: "qso --qsl "
