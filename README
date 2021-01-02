@@ -8,5 +8,5 @@ qrv (prints current frequency/band/antenne etc..)
 qrx (disconnect all antennas)
 qth (print / set QTH)
 hamtools-import-adi (imports ADI to logs/lookup)
-qso (edits logs)
+qso (add qso / edit qso logs / set logbook)
 qrz-label (dumps to specific label format)-
