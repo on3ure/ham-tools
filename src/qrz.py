@@ -40,7 +40,6 @@ configdir = os.path.expanduser('~/.config/ham-tools')
 
 def shutdown(forced=False):
     '''bye bye'''
-    print("Shutdown requested...exiting")
     if forced is True:
         os._exit(1)
     else:
@@ -89,7 +88,7 @@ def qrzLookup(origcall, config):
     else:
         callsign = lookup['callsign']
     try:
-        print(lookup)
+        #print(lookup)
         print(fg('#f9b9b3') + callsign + ' (' + ','.join(lookup['aliases']) +
               ')')
     except TypeError:
@@ -127,29 +126,37 @@ def qrzLookup(origcall, config):
     return data
 
 
-def ignore(config, call=None):
+def ignore(config, data):
     '''restart'''
-    print(call)
+    if config['verbose'] is True:
+        print('ignoring selection ' + data['origcallsign'] + ' ... reset')
 
 
-def qso(config, origcall='None', call='None'):
+def qso(config, data):
     '''log qso'''
-    os.system('qso "' + origcall + '" "' + call + '"')
+    os.system(config['qso']['exec'] + data['origcallsign'] + '" "' + data['callsign'] + '"')
 
 
-def qsl(config, call='None'):
+def qsl(config, data):
     '''qsl'''
-    print(call)
+    os.system(config['qsl']['exec'] + data['origcallsign'] + '" "' + data['callsign'] + '"')
 
 
-def rotate(config, call='None'):
+def rotate(config, data):
     '''rotate'''
-    print(call)
+    os.system(config['rotate']['exec'] + data['origcallsign'] + '" "' + data['callsign'] + '"')
 
 
 def sendemail(config, data):
     '''email'''
     os.system(config['email']['exec'] + data['email'])
+
+
+def appshutdown(config, data):
+    '''bye bye'''
+    if config['verbose'] is True:
+        print("ignoring selection " + data['origcallsign'] + " shutdown requested...exiting")
+    shutdown()
 
 
 # Menu Options
@@ -163,7 +170,7 @@ options = {
     2: rotate,
     3: sendemail,
     4: ignore,
-    5: shutdown,
+    5: appshutdown,
 }
 
 
