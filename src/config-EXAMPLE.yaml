@@ -3,23 +3,45 @@ redis:
   port: 6379
 qth: 
   heure:
-    call: "YOURCALL/A"
     latitude:
     longitude:
     maidenhaid: 
   merchtem:
-    call: "YOURCALL"
     latitude:
     longitude:
     maidenhaid: 
   lombardsijde:
-    call: "YOURCALL/A"
     latitude:
     longitude:
-    maidenhaid: 
+    maidenhaid:
+  opwijk:
+    latitude:
+    longitude:
+    maidenhaid:
+qsl:
+  OO5CARE:
+    station: OO5CARE
+    operator: ON3URE
+    logbook: oo5care
+  ON4AOW:
+    station: ON4AOW
+    operator: ON3URE
+    logbook: on4aow
+  ON3URE/P:
+    station: ON3URE
+    operator: ON3URE
+    logbook: on3ure
+  ON3URE/A:
+    station: ON3URE
+    operator: ON3URE
+    logbook: on3ure
+  ON3URE:
+    station: ON3URE
+    operator: ON3URE
+    logbook: on3ure
 qrz.com:
-  username: "YOURCALL"
-  password: "YOURPASSWORD"
+  username: ""
+  password: ""
 email:
   exec: "pb mailto:"
 qso:

@@ -95,7 +95,12 @@ def qsoLookup(call):
     data = qsoRedisLookup(call)
     if data:
         print()
-        print(fg('#FF0000') + attr('bold') + 'Last QSO: ', end="")
+        print(fg('blue') + '-=' + fg('#FF0000') + attr('bold') + "Last QSO" + attr('reset') +
+              fg('blue') + '=-' + attr('reset'))
+        print(fg('#884444') + attr('bold') + 'Operator: ', end="")
+        print(fg('dark_sea_green_3b') + data['operator'], end=" ")
+        print(fg('#884444') + attr('bold') + 'Station: ', end="")
+        print(fg('dark_sea_green_3b') + data['station'])
         print(fg('#884444') + attr('bold') + 'Date: ', end="")
         print(fg('dark_sea_green_3b') + data['date'], end=" ")
         print(fg('#884444') + attr('bold') + 'Band: ', end="")
@@ -212,6 +217,9 @@ def rotate(config, data):
     os.system(config['rotate']['exec'] + data['origcallsign'] + '" "' +
               data['callsign'] + '"')
 
+def googlemaps(config, data):
+    '''googlemaps'''
+    os.system(config['gmaps']['exec'] + data['latitude'] + " " + data['longitude'])
 
 def sendemail(config, data):
     '''email'''
@@ -229,15 +237,16 @@ def appshutdown(config, data):
 # Menu Options
 menu_options = [
     "[o] (qso) starts qso", "[l] (qsl) ends qso", "[r] rotate", "[e] email",
-    "[i] ignore", "[x] exit"
+    "[g] google maps", "[i] ignore", "[x] exit"
 ]
 options = {
     0: qso,
     1: qsl,
     2: rotate,
     3: sendemail,
-    4: ignore,
-    5: appshutdown,
+    4: googlemaps,
+    5: ignore,
+    6: appshutdown,
 }
 
 
