@@ -80,6 +80,32 @@ def dictLookupAndPrint(lookup, color, what, newline=True, endchar=" "):
         return lookup[what]
     return None
 
+def qsoRedisLookup(call):
+    '''Lookup last QSO'''
+    try:
+        data = redis.get('qrzLASTCALL' + call)
+        if data is None:
+            return False
+        return json.loads(data)
+    except KeyError:
+        return False
+
+def qsoLookup(call):
+    '''Lookup last QSO'''
+    data = qsoRedisLookup(call)
+    if data:
+        print()
+        print(fg('#FF0000') + attr('bold') + 'Last QSO: ', end="")
+        print(fg('#884444') + attr('bold') + 'Date: ', end="")
+        print(fg('dark_sea_green_3b') + data['date'], end=" ")
+        print(fg('#884444') + attr('bold') + 'Band: ', end="")
+        print(fg('dark_sea_green_3b') + data['band'], end=" ")
+        print(fg('#884444') + attr('bold') + 'Mode: ', end="")
+        print(fg('dark_sea_green_3b') + data['mode'], end=" ")
+        print(fg('#884444') + attr('bold') + 'QSL Send: ', end="")
+        print(fg('dark_sea_green_3b') + data['qsl_send'], end=" ")
+        print(fg('#884444') + attr('bold') + 'QSL Received: ', end="")
+        print(fg('dark_sea_green_3b') + data['qsl_rcvd'])
 
 def qrzLookup(origcall, config):
     '''Lookup call @QRZ'''
@@ -202,7 +228,7 @@ def appshutdown(config, data):
 
 # Menu Options
 menu_options = [
-    "[o] (qso) starts qso", "[l] (qsl) ends qso]", "[r] rotate", "[e] email",
+    "[o] (qso) starts qso", "[l] (qsl) ends qso", "[r] rotate", "[e] email",
     "[i] ignore", "[x] exit"
 ]
 options = {
@@ -247,6 +273,8 @@ def main():
             else:
                 data = qrzLookup(callLookup, cfg)
                 if data['callsign'] is not None:
+                    qsoLookup(data['callsign'])
+                    # check if previous QSO
                     print(attr('reset'))
                     terminal_menu = TerminalMenu(menu_options,
                                                  title=data['callsign'] +
