@@ -8,6 +8,7 @@ import sys
 import json
 import os
 import yaml
+import requests
 from simple_term_menu import TerminalMenu
 from pyhamtools import LookupLib, Callinfo
 from colored import fg, attr
@@ -16,6 +17,7 @@ from prompt_toolkit.completion import FuzzyWordCompleter
 from prompt_toolkit import PromptSession
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.history import FileHistory
+from bs4 import BeautifulSoup
 import redis
 
 style = Style.from_dict({
@@ -49,6 +51,14 @@ def shutdown(forced=False):
         sys.exit()
 
 
+def displayQRZImage(call):
+    '''display qrz Image'''
+    #r = requests.get('https://www.qrz.com/db/'+ call.lower())
+    #soup = BeautifulSoup(r.content, "html")
+
+    #image = soup.find("meta",  property="og:image")
+
+
 def qrzRedisLookup(call):
     '''redis lookup'''
     try:
@@ -58,6 +68,17 @@ def qrzRedisLookup(call):
         return json.loads(data)
     except KeyError:
         return False
+
+
+def dictLookupAndPrint(lookup, color, what, newline=True, endchar=" "):
+    '''lookup and print'''
+    if what in lookup:
+        if newline:
+            print(fg(color) + str(lookup[what]))
+        else:
+            print(fg(color) + str(lookup[what]) + endchar, end='')
+        return lookup[what]
+    return None
 
 
 def qrzLookup(origcall, config):
@@ -95,40 +116,49 @@ def qrzLookup(origcall, config):
             return {'origcallsign': origcall, 'callsign': callsign}
     else:
         callsign = lookup['callsign']
-    try:
-        #print(lookup)
-        print(fg('#f9b9b3') + callsign + ' (' + ','.join(lookup['aliases']) +
-              ')')
-    except TypeError:
-        print(fg('#f9b9b3') + callsign)
-    except KeyError:
-        print(fg('#f9b9b3') + callsign)
-    print()
-    try:
-        print(fg('#a4a24f') + lookup['fname'] + ' ' + lookup['name'])
-    except KeyError:
-        print("Anonymous")
-    try:
-        print(fg('navajo_white_3') + lookup['addr1'])
-    except KeyError:
-        pass
-    try:
-        print(fg('navajo_white_3') + lookup['addr2'])
-    except KeyError:
-        pass
-    try:
-        print(fg('navajo_white_3') + lookup['country'])
-    except KeyError:
-        pass
-    try:
-        print(fg('dark_sea_green_3b') + lookup['locator'])
-    except KeyError:
-        pass
 
-    try:
-        email = lookup['email']
-    except KeyError:
-        email = None
+    if callsign and 'aliases' in lookup:
+        print(fg('blue') + '-=' + fg('turquoise_4') + attr('bold') + callsign + attr('reset') +
+              fg('blue') + '=-' + attr('reset') + " (" + ','.join(lookup['aliases']) +
+              ')')
+    else:
+        print(fg('blue') + '-=' + fg('turquoise_4') + attr('bold') + callsign +
+              fg('blue') + '=-')
+
+    print(fg('#884444') + attr('bold') + 'Address: ', end="")
+
+    dictLookupAndPrint(lookup, '#a4a24f', 'fname', False)
+    dictLookupAndPrint(lookup, '#a4a24f', 'name', False, ", ")
+
+    dictLookupAndPrint(lookup, 'navajo_white_3', 'addr1', False, ", ")
+    dictLookupAndPrint(lookup, 'navajo_white_3', 'zipcode', False)
+    dictLookupAndPrint(lookup, 'navajo_white_3', 'addr2', False, ", ")
+    dictLookupAndPrint(lookup, 'navajo_white_3', 'country')
+
+    print(fg('#884444') + attr('bold') + 'Maidenhead: ', end="")
+    dictLookupAndPrint(lookup, 'dark_sea_green_3b', 'locator', False)
+    print(fg('#884444') + attr('bold') + 'Latitude: ', end="")
+    dictLookupAndPrint(lookup, 'dark_sea_green_3b', 'latitude', False)
+    print(fg('#884444') + attr('bold') + 'Longitude: ', end="")
+    dictLookupAndPrint(lookup, 'dark_sea_green_3b', 'longitude')
+
+    print(fg('#884444') + attr('bold') + 'CCode: ', end="")
+    dictLookupAndPrint(lookup, 'dark_sea_green_3b', 'ccode', False)
+    print(fg('#884444') + attr('bold') + 'CQZone: ', end="")
+    dictLookupAndPrint(lookup, 'dark_sea_green_3b', 'cqz', False)
+    print(fg('#884444') + attr('bold') + 'ITUZone: ', end="")
+    dictLookupAndPrint(lookup, 'dark_sea_green_3b', 'ituz')
+
+    print(fg('#884444') + attr('bold') + 'QSL: ', end="")
+    dictLookupAndPrint(lookup, 'navajo_white_3', 'qslmgr', False)
+    print(fg('#884444') + attr('bold') + 'eQSL: ', end="")
+    dictLookupAndPrint(lookup, 'navajo_white_3', 'eqsl', False)
+    print(fg('#884444') + attr('bold') + 'lotw: ', end="")
+    dictLookupAndPrint(lookup, 'navajo_white_3', 'lotw')
+
+    print(fg('#884444') + attr('bold') + 'E-Mail: ', end="")
+    email = dictLookupAndPrint(lookup, 'navajo_white_3', 'email', False)
+    print(attr('reset'))
 
     return {'origcallsign': origcall, 'callsign': callsign, 'email': email}
 
@@ -223,7 +253,10 @@ def main():
                                                  " (" + data['origcallsign'] +
                                                  ")")
                     menu_entry_index = terminal_menu.show()
-                    options[menu_entry_index](cfg, data)
+                    try:
+                        options[menu_entry_index](cfg, data)
+                    except KeyError:
+                        pass
             if not infinite:
                 sys.exit()
 
