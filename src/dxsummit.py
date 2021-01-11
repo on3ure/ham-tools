@@ -37,8 +37,10 @@ redis = redis.Redis(host='localhost',
                     charset="utf-8",
                     decode_responses=True)
 
+globalvars = {
+        "lastcall": None,
+}
 mode = set()
-alt = ""
 special = set()
 
 auto_tune = Checkbox(text="auto tune")
@@ -121,6 +123,14 @@ def auto_tune_(event):
         auto_tune.checked = False
     else:
         auto_tune.checked = True
+        radios.current_value = radios.values[radios._selected_index][0]
+        tunedata = radios.current_value.split(sep=" ", maxsplit=3)
+        globalvars['lastcall'] = tunedata[2]
+        if qrz.checked is True:
+            redis.rpush('qrzLookupQueue', tunedata[2])
+        frequency.content=FormattedTextControl(HTML('<b fg="#884444">Freq.:</b> ' + (tunedata[1] + " Khz").rjust(15)))
+        dx.content=FormattedTextControl(HTML('<b fg="#884444">Call:</b> ' + tunedata[2].rjust(12)))
+        event.app.invalidate()
     event.app.invalidate()
     #print(str(dir(auto_tune)).replace(",","\n"))
 
@@ -251,11 +261,11 @@ def _(event):
     ''' update frequency/call '''
     radios.current_value = radios.values[radios._selected_index][0]
     tunedata = radios.current_value.split(sep=" ", maxsplit=3)
+    globalvars['lastcall'] = tunedata[2]
     if qrz.checked is True:
         redis.rpush('qrzLookupQueue', tunedata[2])
     frequency.content=FormattedTextControl(HTML('<b fg="#884444">Freq.:</b> ' + (tunedata[1] + " Khz").rjust(15)))
     dx.content=FormattedTextControl(HTML('<b fg="#884444">Call:</b> ' + tunedata[2].rjust(12)))
-    #dumper.dump(test.children[0])
     event.app.invalidate()
 
 async def update_spots(application):
@@ -280,12 +290,13 @@ async def update_spots(application):
                 splitstring = cleanline.split(sep=" ", maxsplit=3)
                 clusterdata.append(
                     (hashlib.md5(line.encode('utf-8')).hexdigest() + " " + splitstring[1]+" "+splitstring[2], " " + line))
-                if auto_tune.checked is True and line is 0:
-                    data = cleanline.split(sep=" ", maxsplit=3)
+                data = cleanline.split(sep=" ", maxsplit=3)
+                if ((auto_tune.checked is True) and (i == 0) and (data[2] != globalvars['lastcall'])):
+                    globalvars['lastcall'] = data[2]
                     frequency.content=FormattedTextControl(HTML('<b fg="#884444">Freq.:</b> ' + (data[1] + " Khz").rjust(15)))
                     dx.content=FormattedTextControl(HTML('<b fg="#884444">Call:</b> ' + data[2].rjust(12)))
                     if qrz.checked is True:
-                        redis.rpush('qrzLookupQueue',data[2]) 
+                        redis.rpush('qrzLookupQueue',data[2])
                 i+=1
 
             radios.values = clusterdata
@@ -295,7 +306,6 @@ async def update_spots(application):
         except asyncio.CancelledError:
             print("Background task cancelled.")
         await asyncio.sleep(5)
-
 
 async def main():
     ''' Main stuff '''
