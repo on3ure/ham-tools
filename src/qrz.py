@@ -10,11 +10,12 @@ import json
 import os
 import yaml
 import requests
-from simple_term_menu import TerminalMenu
+import dumper
+
 from pyhamtools import LookupLib, Callinfo
 from colored import fg, attr
 from prompt_toolkit.styles import Style
-from prompt_toolkit.completion import FuzzyWordCompleter
+from prompt_toolkit.completion import NestedCompleter
 from prompt_toolkit import PromptSession
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.history import FileHistory
@@ -42,19 +43,32 @@ redis = redis.Redis(host='localhost',
                     decode_responses=True)
 
 calls = list(redis.smembers('qrzCALLS'))
+commands = {
+    'lookup': {},
+    'qso': None,
+    'exit': None,
+    'quit': None,
+    'rotate': None,
+    'email': None,
+    'maps': None
+}
+
+for item in calls:
+    commands['lookup'][str(item)] = None
+
+historyfile = configdir + "/qrz-history"
+session = PromptSession(history=FileHistory(historyfile))
 
 
-async def shutdown(forced=False):
+async def shutdown():
     '''bye bye'''
-    if forced is True:
-        os._exit(1)
-    else:
-        sys.exit()
+    os._exit(1)
 
 
 def displayQRZImage(call):
     '''display qrz Image'''
     mycall = call
+    print(mycall)
     #r = requests.get('https://www.qrz.com/db/'+ call.lower())
     #soup = BeautifulSoup(r.content, "html")
 
@@ -82,6 +96,7 @@ async def dictLookupAndPrint(lookup, color, what, newline=True, endchar=" "):
         return lookup[what]
     return None
 
+
 async def qsoRedisLookup(call):
     '''Lookup last QSO'''
     try:
@@ -91,6 +106,7 @@ async def qsoRedisLookup(call):
         return json.loads(data)
     except KeyError:
         return False
+
 
 async def qsoLookup(call):
     '''Lookup last QSO'''
@@ -113,6 +129,7 @@ async def qsoLookup(call):
         print(fg('dark_sea_green_3b') + data['qsl_send'], end=" ")
         print(fg('#884444') + attr('bold') + 'QSL Received: ', end="")
         print(fg('dark_sea_green_3b') + data['qsl_rcvd'])
+
 
 async def qrzLookup(origcall, config):
     '''Lookup call @QRZ'''
@@ -171,9 +188,9 @@ async def qrzLookup(origcall, config):
     print(fg('#884444') + attr('bold') + 'Maidenhead: ', end="")
     await dictLookupAndPrint(lookup, 'dark_sea_green_3b', 'locator', False)
     print(fg('#884444') + attr('bold') + 'Latitude: ', end="")
-    await dictLookupAndPrint(lookup, 'dark_sea_green_3b', 'latitude', False)
+    latitude = await dictLookupAndPrint(lookup, 'dark_sea_green_3b', 'latitude', False)
     print(fg('#884444') + attr('bold') + 'Longitude: ', end="")
-    await dictLookupAndPrint(lookup, 'dark_sea_green_3b', 'longitude')
+    longitude = await dictLookupAndPrint(lookup, 'dark_sea_green_3b', 'longitude')
 
     print(fg('#884444') + attr('bold') + 'CCode: ', end="")
     await dictLookupAndPrint(lookup, 'dark_sea_green_3b', 'ccode', False)
@@ -190,10 +207,10 @@ async def qrzLookup(origcall, config):
     await dictLookupAndPrint(lookup, 'navajo_white_3', 'lotw')
 
     print(fg('#884444') + attr('bold') + 'E-Mail: ', end="")
-    email =await  dictLookupAndPrint(lookup, 'navajo_white_3', 'email', False)
+    email = await  dictLookupAndPrint(lookup, 'navajo_white_3', 'email', False)
     print(attr('reset'))
 
-    return {'origcallsign': origcall, 'callsign': callsign, 'email': email}
+    return {'origcallsign': origcall, 'callsign': callsign, 'email': email, 'latitude': latitude, 'longitude': longitude}
 
 
 async def ignore(config, data):
@@ -220,9 +237,12 @@ def rotate(config, data):
     os.system(config['rotate']['exec'] + data['origcallsign'] + '" "' +
               data['callsign'] + '"')
 
-def googlemaps(config, data):
-    '''googlemaps'''
-    os.system(config['gmaps']['exec'] + data['latitude'] + " " + data['longitude'])
+
+def maps(config, data):
+    '''maps'''
+    os.system(config['maps']['exec'] + " " +
+              str(data['latitude']) + " " + str(data['longitude']))
+
 
 def sendemail(config, data):
     '''email'''
@@ -237,73 +257,36 @@ async def appshutdown(config, data):
     await shutdown()
 
 
-
-# Menu Options
-menu_options = [
-    "[o] (qso) starts qso", "[l] (qsl) ends qso", "[r] rotate", "[e] email",
-    "[g] google maps", "[i] ignore", "[x] exit"
-]
-options = {
-    0: qso,
-    1: qsl,
-    2: rotate,
-    3: sendemail,
-    4: googlemaps,
-    5: ignore,
-    6: appshutdown,
-}
-
-session = PromptSession()
-
 async def qrzLookupQueue():
     '''test'''
-    global session
     while True:
         try:
             call = redis.lpop('qrzLookupQueue')
             if call is not None:
-                #TODO cleanup call
-                print()
-                data = await qrzLookup(call, cfg)
-                #TODO check call for action/ignore
-                if data['callsign'] is not None:
-                    terminal_menu = TerminalMenu(menu_options,
-                                                 title=data['callsign'] +
-                                                 " (" + data['origcallsign'] +
-                                                 ")")
-                    menu_entry_index = terminal_menu.show()
-                    try:
-                        await options[menu_entry_index](cfg, data)
-                    except KeyError:
-                        pass
-                session.app.renderer.clear()
+                session.default_buffer.text = "lookup " + call
+                session.default_buffer.validate_and_handle()
+                await asyncio.sleep(1)
             else:
                 await asyncio.sleep(1)
         except asyncio.CancelledError:
-            print("Background task cancelled.")
             await shutdown()
-        except NoneType:
-            pass
 
 
 async def main():
     '''Main stuff'''
     try:
-        historyfile = configdir + "/qrz-history"
+        asyncio.create_task(qrzLookupQueue())
 
-        global session
-        session = PromptSession(history=FileHistory(historyfile),refresh_interval=1)
-        
-        background_task_qrz_lookup_queue = asyncio.create_task(qrzLookupQueue())
+        data = None
 
         while True:
             infinite = True
             if 1 in sys.argv:
-                callLookup = sys.argv[1]
+                callLookup = "lookup " + sys.argv[1]
                 infinite = False
             else:
                 try:
-                    call_completer = FuzzyWordCompleter(calls)
+                    call_completer = NestedCompleter.from_nested_dict(commands)
 
                     message = [('class:message', 'enter call'),
                                ('class:prompt', '> ')]
@@ -311,31 +294,43 @@ async def main():
                         message,
                         style=style,
                         completer=call_completer,
+                        complete_while_typing=True,
                         enable_history_search=True,
                         auto_suggest=AutoSuggestFromHistory())
                 except KeyboardInterrupt:
-                    await shutdown(True)
-                if callLookup.lower() in ['exit', 'quit']:
                     await shutdown()
-                elif callLookup is "":
-                    pass
-                else:
+
+                command = (callLookup.lower().split(sep=" ", maxsplit=2))[0]
+
+                if command in ['exit', 'quit', 'rotate', 'email', 'maps']:
+                    if command in ['']:
+                        pass
+                    if command in ['exit', 'quit']:
+                        await shutdown()
+                    if command in ['email']:
+                        if data is None:
+                            print("First do a lookup !")
+                        else:
+                            sendemail(cfg, data)
+                    if command in ['rotate']:
+                        if data is None:
+                            print("First do a lookup !")
+                        else:
+                            rotate(cfg, data)
+                    if command in ['maps']:
+                        if data is None:
+                            print("First do a lookup !")
+                        else:
+                            print("Start maps")
+                            maps(cfg, data)
+
+                if command in ['lookup']:
                     data = await qrzLookup(callLookup, cfg)
                     if data['callsign'] is not None:
                         await qsoLookup(data['callsign'])
+                        print()
                         if not infinite:
                             sys.exit()
-                        print(attr('reset'))
-                        terminal_menu = TerminalMenu(menu_options,
-                                                     title=data['callsign'] +
-                                                     " (" + data['origcallsign'] +
-                                                     ")")
-                        menu_entry_index = terminal_menu.show()
-                        try:
-                            await options[menu_entry_index](cfg, data)
-                        except KeyError:
-                            pass
-                        session.app.renderer.clear()
     except EOFError:
         pass
 

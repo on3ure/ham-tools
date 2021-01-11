@@ -82,7 +82,7 @@ current_band = Window(
 
 
 title = "Spotter".ljust(15) + "Freq." . ljust(8) + "DX".ljust(13) + \
-    "Info".ljust(35) + "Time".ljust(15) + "Country".ljust(100)
+    "Info".ljust(35) + "Time".ljust(15) + "Country".ljust(500)
 
 toggle_one = VSplit([auto_tune, qrz, current_band_only, phone, cw,  digi], padding=1)
 toggle_two = VSplit([ mobile, portable, beacon, qrp, sat, iota], padding=1)
@@ -272,6 +272,7 @@ async def update_spots(application):
 
             clusterdata = list()
 
+            i = 0
             for line in cleantext.splitlines():
                 line = line[:73] + ':' + line[73:]
                 #line = line[:76] + line[84:]
@@ -279,6 +280,13 @@ async def update_spots(application):
                 splitstring = cleanline.split(sep=" ", maxsplit=3)
                 clusterdata.append(
                     (hashlib.md5(line.encode('utf-8')).hexdigest() + " " + splitstring[1]+" "+splitstring[2], " " + line))
+                if auto_tune.checked is True and line is 0:
+                    data = cleanline.split(sep=" ", maxsplit=3)
+                    frequency.content=FormattedTextControl(HTML('<b fg="#884444">Freq.:</b> ' + (data[1] + " Khz").rjust(15)))
+                    dx.content=FormattedTextControl(HTML('<b fg="#884444">Call:</b> ' + data[2].rjust(12)))
+                    if qrz.checked is True:
+                        redis.rpush('qrzLookupQueue',data[2]) 
+                i+=1
 
             radios.values = clusterdata
 
@@ -286,7 +294,7 @@ async def update_spots(application):
                 application.invalidate()
         except asyncio.CancelledError:
             print("Background task cancelled.")
-        await asyncio.sleep(15)
+        await asyncio.sleep(5)
 
 
 async def main():
