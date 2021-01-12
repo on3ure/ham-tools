@@ -1,7 +1,7 @@
 #!/bin/bash -x
 
 sudo pip3 install -r requirements.txt
-sudo pip3 install --upgrade --force-reinstall  git+https://github.com/on3ure/python-prompt-toolki
+sudo pip3 install --upgrade --force-reinstall  git+https://github.com/on3ure/python-prompt-toolkit
 
 sudo cp dxsummit.py /usr/bin/dxsummit
 sudo chmod +x /usr/bin/dxsummit
