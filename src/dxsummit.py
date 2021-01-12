@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 '''DXSummit CLI by ON3URE'''
 
 import asyncio
@@ -273,10 +273,10 @@ async def update_spots(application):
     Coroutine that updates spots
     """
     lasthash = ""
-    while True:
-        try:
+    try:
+        while True:
             r = requests.get(
-                'http://www.dxsummit.fi/DxSpots.aspx?count=100&include_modes=PHONE')
+                'http://www.dxsummit.fi/DxSpots.aspx?count=50&include_modes=PHONE')
             cleantext = BeautifulSoup(r.text, "lxml").get_text()
             currenthash = hashlib.md5(cleantext.encode('utf-8')).hexdigest()
 
@@ -301,11 +301,14 @@ async def update_spots(application):
 
             radios.values = clusterdata
 
-            if currenthash is not lasthash:
+            if currenthash != lasthash:
                 application.invalidate()
-        except asyncio.CancelledError:
-            print("Background task cancelled.")
-        await asyncio.sleep(5)
+                await asyncio.sleep(15)
+            else:
+                await asyncio.sleep(30)
+    except asyncio.CancelledError:
+        #TODO safe config here ?
+        print()
 
 async def main():
     ''' Main stuff '''
@@ -337,7 +340,7 @@ async def main():
     finally:
         background_task_update_spots.cancel()
         #background_task_tune.cancel()
-    print("Quitting event loop. Bye.")
+    #print("Quitting event loop. Bye.")
 
 
 if __name__ == "__main__":

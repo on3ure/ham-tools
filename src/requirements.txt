@@ -1,0 +1,9 @@
+Dumper==1.2.0
+redis==3.5.3
+pyhamtools==0.7.6
+prompt_toolkit==3.0.10
+adif_io==0.0.3
+requests==2.21.0
+colored==1.4.2
+beautifulsoup4==4.9.3
+PyYAML==5.3.1

@@ -1,7 +1,10 @@
-#!/bin/bash
+#!/bin/bash -x
 
-cp qrz.py ~/bin/qrz
-chmod +x ~/bin/qrz
+sudo pip3 install -r requirements.txt
+sudo pip3 install --upgrade --force-reinstall  git+https://github.com/on3ure/python-prompt-toolki
 
-cp qso.sh ~/bin/qso
-chmod +x ~/bin/qso
+sudo cp dxsummit.py /usr/bin/dxsummit
+sudo chmod +x /usr/bin/dxsummit
+
+sudo cp qrz.py /usr/bin/qrz
+sudo chmod +x /usr/bin/qrz

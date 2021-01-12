@@ -175,7 +175,7 @@ async def qrzLookup(origcall, config):
         print(fg('blue') + '-=' + fg('turquoise_4') + attr('bold') + callsign +
               fg('blue') + '=-')
 
-    print(fg('#884444') + attr('bold') + 'Address: ', end="")
+    print(fg('#884444') + attr('bold') + 'QTH: ', end="")
 
     await dictLookupAndPrint(lookup, '#a4a24f', 'fname', False)
     await dictLookupAndPrint(lookup, '#a4a24f', 'name', False, ", ")
@@ -185,7 +185,7 @@ async def qrzLookup(origcall, config):
     await dictLookupAndPrint(lookup, 'navajo_white_3', 'addr2', False, ", ")
     await dictLookupAndPrint(lookup, 'navajo_white_3', 'country')
 
-    print(fg('#884444') + attr('bold') + 'Maidenhead: ', end="")
+    print(fg('#884444') + attr('bold') + 'Grid square: ', end="")
     await dictLookupAndPrint(lookup, 'dark_sea_green_3b', 'locator', False)
     print(fg('#884444') + attr('bold') + 'Latitude: ', end="")
     latitude = await dictLookupAndPrint(lookup, 'dark_sea_green_3b', 'latitude', False)
@@ -288,7 +288,7 @@ async def main():
                 try:
                     call_completer = NestedCompleter.from_nested_dict(commands)
 
-                    message = [('class:message', 'enter call'),
+                    message = [('class:message', 'qrz'),
                                ('class:prompt', '> ')]
                     callLookup = await session.prompt_async(
                         message,

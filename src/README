@@ -1,0 +1,6 @@
+early ... not functional
+
+install redis (apt install redis-server)
+change port or modify the config (see down below)
+
+copy example config to ~/.config/ham-tools/config.yaml 
