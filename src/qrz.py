@@ -323,14 +323,16 @@ async def main():
                         else:
                             print("Start maps")
                             maps(cfg, data)
-
-                if command in ['lookup']:
-                    data = await qrzLookup(callLookup, cfg)
-                    if data['callsign'] is not None:
-                        await qsoLookup(data['callsign'])
-                        print()
-                        if not infinite:
-                            sys.exit()
+                else:
+                    if command in ['lookup']:
+                        data = await qrzLookup(callLookup, cfg)
+                        if data['callsign'] is not None:
+                            await qsoLookup(data['callsign'])
+                            print()
+                            if not infinite:
+                                sys.exit()
+                    else:
+                        redis.rpush('qrzLookupQueue', callLookup)
     except EOFError:
         pass
 
