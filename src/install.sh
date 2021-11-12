@@ -8,3 +8,6 @@ sudo chmod +x /usr/bin/dxsummit
 
 sudo cp qrz.py /usr/bin/qrz
 sudo chmod +x /usr/bin/qrz
+
+sudo cp qte.py /usr/bin/qte
+sudo chmod +x /usr/bin/qte

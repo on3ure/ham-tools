@@ -9,17 +9,18 @@ import sys
 import json
 import os
 import yaml
-import requests
-import dumper
+#import requests
+#import dumper
 
 from pyhamtools import LookupLib, Callinfo
+from pyhamtools.locator import calculate_heading, calculate_heading_longpath, latlong_to_locator
 from colored import fg, attr
 from prompt_toolkit.styles import Style
 from prompt_toolkit.completion import NestedCompleter
 from prompt_toolkit import PromptSession
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.history import FileHistory
-from bs4 import BeautifulSoup
+#from bs4 import BeautifulSoup
 import redis
 
 style = Style.from_dict({
@@ -41,6 +42,12 @@ redis = redis.Redis(host='localhost',
                     db=0,
                     charset="utf-8",
                     decode_responses=True)
+
+oneshot=False
+
+for callsign in sys.argv[1:]:
+    redis.rpush('qrzLookupQueue', callsign)
+    oneshot=True
 
 calls = list(redis.smembers('qrzCALLS'))
 commands = {
@@ -143,7 +150,8 @@ async def qrzLookup(origcall, config):
         lookup = await qrzRedisLookup(call)
     except ValueError:
         callsign = None
-        lookup = dict()
+        lookup = {}
+        #dict()
         print("Not Found")
         return {'origcallsign': origcall, 'callsign': callsign}
     if lookup is False:
@@ -156,12 +164,14 @@ async def qrzLookup(origcall, config):
             calls.append(call.upper())
         except ValueError:
             callsign = None
-            lookup = dict()
+            lookup = {}
+            #dict()
             print("Not Found")
             return {'origcallsign': origcall, 'callsign': callsign}
         except KeyError:
             callsign = call
-            lookup = dict()
+            lookup = {}
+            #dict()
             print("Not Found")
             return {'origcallsign': origcall, 'callsign': callsign}
     else:
@@ -207,10 +217,22 @@ async def qrzLookup(origcall, config):
     await dictLookupAndPrint(lookup, 'navajo_white_3', 'lotw')
 
     print(fg('#884444') + attr('bold') + 'E-Mail: ', end="")
-    email = await  dictLookupAndPrint(lookup, 'navajo_white_3', 'email', False)
+    email = await  dictLookupAndPrint(lookup, 'navajo_white_3', 'email', True)
+    
+    locator1 = latlong_to_locator(cfg['qth']['latitude'], cfg['qth']['longitude'])
+    locator2 = latlong_to_locator(latitude, longitude)
+    heading = calculate_heading(locator1, locator2)
+    longpath = calculate_heading_longpath(locator1, locator2)
+
+    print(fg('#884444') + attr('bold') + 'Heading: ', end="")
+    print(fg('navajo_white_3') + "%.1f°" % heading, end="")
+    
+    print(fg('#884444') + attr('bold') + ' Longpath: ', end="")
+    print(fg('navajo_white_3') + "%.1f°" % longpath, end="")
+    
     print(attr('reset'))
 
-    return {'origcallsign': origcall, 'callsign': callsign, 'email': email, 'latitude': latitude, 'longitude': longitude}
+    return {'origcallsign': origcall, 'callsign': callsign, 'email': email, 'latitude': latitude, 'longitude': longitude, 'heading': heading, 'longpath': longpath }
 
 
 async def ignore(config, data):
@@ -267,6 +289,8 @@ async def qrzLookupQueue():
                 session.default_buffer.validate_and_handle()
                 await asyncio.sleep(1)
             else:
+                if oneshot is True:
+                    await shutdown()
                 await asyncio.sleep(1)
         except asyncio.CancelledError:
             await shutdown()
@@ -288,8 +312,12 @@ async def main():
                 try:
                     call_completer = NestedCompleter.from_nested_dict(commands)
 
-                    message = [('class:message', 'qrz'),
-                               ('class:prompt', '> ')]
+                    if oneshot is False: 
+                        message = [('class:message', 'qrz'),
+                                   ('class:prompt', '> ')]
+                    else:
+                        message = ''
+
                     callLookup = await session.prompt_async(
                         message,
                         style=style,

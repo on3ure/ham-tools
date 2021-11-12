@@ -7,3 +7,7 @@ requests==2.21.0
 colored==1.4.2
 beautifulsoup4==4.9.3
 PyYAML==5.3.1
+lxml==4.6.4
+geopy==2.2
+nominatim==0.1
+maidenhead==1.6

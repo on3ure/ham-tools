@@ -280,7 +280,7 @@ async def update_spots(application):
             cleantext = BeautifulSoup(r.text, "lxml").get_text()
             currenthash = hashlib.md5(cleantext.encode('utf-8')).hexdigest()
 
-            clusterdata = list()
+            clusterdata = []
 
             i = 0
             for line in cleantext.splitlines():
