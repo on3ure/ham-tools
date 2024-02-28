@@ -1,0 +1,35 @@
+verbose: True
+redis:
+  port: 6380 # default 6379
+qth: 
+  latitude: 50.961237 
+  longitude: 4.239693
+  maidenhaid: JO20cw
+qsl:
+  OO5CARE:
+    station: OO5CARE
+    operator: ON3URE
+    logbook: oo5care
+  ON4AOW:
+    station: ON4AOW
+    operator: ON3URE
+    logbook: on4aow
+  ON3URE/P:
+    station: ON3URE
+    operator: ON3URE
+    logbook: on3ure
+  ON3URE/A:
+    station: ON3URE
+    operator: ON3URE
+    logbook: on3ure
+  ON3URE:
+    station: ON3URE
+    operator: ON3URE
+    logbook: on3ure
+qrz.com:
+  username: "ON3URE"
+  password: "3hqtVDrq94sQ"
+email:
+  exec: "pb mailto:"
+maps:
+  exec:  "maps"

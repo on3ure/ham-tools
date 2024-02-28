@@ -1,13 +1,15 @@
 #!/bin/bash -x
 
-sudo pip3 install -r requirements.txt
-sudo pip3 install --upgrade --force-reinstall  git+https://github.com/on3ure/python-prompt-toolkit
+pip3 install -r requirements.txt
+pip3 install --upgrade --force-reinstall  git+https://github.com/on3ure/python-prompt-toolkit
 
-sudo cp dxsummit.py /usr/bin/dxsummit
-sudo chmod +x /usr/bin/dxsummit
+mkdir ~/bin
 
-sudo cp qrz.py /usr/bin/qrz
-sudo chmod +x /usr/bin/qrz
+cp dxsummit.py ~/bin/dxsummit
+chmod +x ~/bin/dxsummit
 
-sudo cp qte.py /usr/bin/qte
-sudo chmod +x /usr/bin/qte
+cp qrz.py ~/bin/qrz
+chmod +x ~/bin/qrz
+
+cp qte.py ~/bin/qte
+chmod +x ~/bin/qte
