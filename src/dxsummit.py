@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 '''DXSummit CLI by ON3URE'''
 
 import asyncio
